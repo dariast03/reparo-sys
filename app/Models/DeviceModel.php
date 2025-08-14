@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class DeviceModel extends Model
 {
     protected $table = 'models';
-    public $timestamps = false;
 
     protected $fillable = [
         'brand_id',

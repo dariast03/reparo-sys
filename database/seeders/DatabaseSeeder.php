@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
         // Run the roles and permissions seeder
         $this->call(SimpleRolesSeeder::class);
 
+        // Seed customers
+        // $this->call(CustomerSeeder::class);
+
         // Create admin user
         $admin = User::factory()->create([
             'name' => 'Root',
@@ -78,7 +81,7 @@ class DatabaseSeeder extends Seeder
         $categories = $this->seedProductCategories();
 
         // Seed Products
-        $products = $this->seedProducts($categories);
+        $products = $this->seedProducts($categories, $brands);
 
         // Seed Suppliers
         $suppliers = $this->seedSuppliers();
@@ -135,7 +138,7 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'Carlos',
                 'last_name' => 'Rodríguez',
                 'document_number' => '12345678',
-                'document_type' => 'id_card',
+                'document_type' => 'ci',
                 'phone' => '+1234567801',
                 'email' => 'carlos@email.com',
                 'address' => 'Av. Principal 123',
@@ -147,7 +150,7 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'Ana',
                 'last_name' => 'López',
                 'document_number' => '87654321',
-                'document_type' => 'id_card',
+                'document_type' => 'ci',
                 'phone' => '+1234567802',
                 'email' => 'ana@email.com',
                 'address' => 'Calle Secundaria 456',
@@ -171,7 +174,7 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'Sofia',
                 'last_name' => 'Martínez',
                 'document_number' => '99887766',
-                'document_type' => 'id_card',
+                'document_type' => 'ci',
                 'phone' => '+1234567804',
                 'email' => 'sofia@email.com',
                 'address' => 'Barrio Norte 321',
@@ -202,6 +205,8 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Google', 'status' => 'active'],
             ['name' => 'Lenovo', 'status' => 'active'],
             ['name' => 'HP', 'status' => 'active'],
+            ['name' => 'Generic', 'status' => 'active'],
+            ['name' => 'Universal', 'status' => 'active'],
         ];
 
         $brandModels = [];
@@ -266,28 +271,34 @@ class DatabaseSeeder extends Seeder
         return $categoryModels;
     }
 
-    private function seedProducts($categories): array
+    private function seedProducts($categories, $brands): array
     {
+        // Find brand IDs by name for easier mapping
+        $appleBrand = collect($brands)->firstWhere('name', 'Apple');
+        $samsungBrand = collect($brands)->firstWhere('name', 'Samsung');
+        $genericBrand = collect($brands)->firstWhere('name', 'Generic');
+        $universalBrand = collect($brands)->firstWhere('name', 'Universal');
+
         $products = [
             // Pantallas
-            ['category_id' => $categories[0]->id, 'code' => 'PNT001', 'name' => 'Pantalla iPhone 14', 'description' => 'Pantalla OLED original para iPhone 14', 'brand' => 'Apple', 'compatible_model' => 'iPhone 14', 'current_stock' => 15, 'minimum_stock' => 5, 'purchase_price' => 180.00, 'sale_price' => 280.00, 'profit_margin' => 35.71, 'product_type' => 'part', 'physical_location' => 'Estante A1', 'status' => 'active'],
-            ['category_id' => $categories[0]->id, 'code' => 'PNT002', 'name' => 'Pantalla Samsung S23', 'description' => 'Pantalla AMOLED para Galaxy S23', 'brand' => 'Samsung', 'compatible_model' => 'Galaxy S23', 'current_stock' => 8, 'minimum_stock' => 3, 'purchase_price' => 150.00, 'sale_price' => 230.00, 'profit_margin' => 34.78, 'product_type' => 'part', 'physical_location' => 'Estante A2', 'status' => 'active'],
+            ['category_id' => $categories[0]->id, 'code' => 'PNT001', 'name' => 'Pantalla iPhone 14', 'description' => 'Pantalla OLED original para iPhone 14', 'brand_id' => $appleBrand->id, 'compatible_model' => 'iPhone 14', 'current_stock' => 15, 'minimum_stock' => 5, 'purchase_price' => 180.00, 'sale_price' => 280.00, 'profit_margin' => 35.71, 'product_type' => 'part', 'physical_location' => 'Estante A1', 'status' => 'active'],
+            ['category_id' => $categories[0]->id, 'code' => 'PNT002', 'name' => 'Pantalla Samsung S23', 'description' => 'Pantalla AMOLED para Galaxy S23', 'brand_id' => $samsungBrand->id, 'compatible_model' => 'Galaxy S23', 'current_stock' => 8, 'minimum_stock' => 3, 'purchase_price' => 150.00, 'sale_price' => 230.00, 'profit_margin' => 34.78, 'product_type' => 'part', 'physical_location' => 'Estante A2', 'status' => 'active'],
 
             // Baterías
-            ['category_id' => $categories[1]->id, 'code' => 'BAT001', 'name' => 'Batería iPhone 14', 'description' => 'Batería de litio 3279mAh para iPhone 14', 'brand' => 'Apple', 'compatible_model' => 'iPhone 14', 'current_stock' => 25, 'minimum_stock' => 10, 'purchase_price' => 45.00, 'sale_price' => 75.00, 'profit_margin' => 40.00, 'product_type' => 'part', 'physical_location' => 'Estante B1', 'status' => 'active'],
-            ['category_id' => $categories[1]->id, 'code' => 'BAT002', 'name' => 'Batería Samsung S23', 'description' => 'Batería de litio 3900mAh para Galaxy S23', 'brand' => 'Samsung', 'compatible_model' => 'Galaxy S23', 'current_stock' => 20, 'minimum_stock' => 8, 'purchase_price' => 40.00, 'sale_price' => 65.00, 'profit_margin' => 38.46, 'product_type' => 'part', 'physical_location' => 'Estante B2', 'status' => 'active'],
+            ['category_id' => $categories[1]->id, 'code' => 'BAT001', 'name' => 'Batería iPhone 14', 'description' => 'Batería de litio 3279mAh para iPhone 14', 'brand_id' => $appleBrand->id, 'compatible_model' => 'iPhone 14', 'current_stock' => 25, 'minimum_stock' => 10, 'purchase_price' => 45.00, 'sale_price' => 75.00, 'profit_margin' => 40.00, 'product_type' => 'part', 'physical_location' => 'Estante B1', 'status' => 'active'],
+            ['category_id' => $categories[1]->id, 'code' => 'BAT002', 'name' => 'Batería Samsung S23', 'description' => 'Batería de litio 3900mAh para Galaxy S23', 'brand_id' => $samsungBrand->id, 'compatible_model' => 'Galaxy S23', 'current_stock' => 20, 'minimum_stock' => 8, 'purchase_price' => 40.00, 'sale_price' => 65.00, 'profit_margin' => 38.46, 'product_type' => 'part', 'physical_location' => 'Estante B2', 'status' => 'active'],
 
             // Conectores
-            ['category_id' => $categories[2]->id, 'code' => 'CON001', 'name' => 'Conector Lightning iPhone', 'description' => 'Conector de carga Lightning para iPhone', 'brand' => 'Apple', 'compatible_model' => 'iPhone 14', 'current_stock' => 30, 'minimum_stock' => 15, 'purchase_price' => 25.00, 'sale_price' => 45.00, 'profit_margin' => 44.44, 'product_type' => 'part', 'physical_location' => 'Estante C1', 'status' => 'active'],
-            ['category_id' => $categories[2]->id, 'code' => 'CON002', 'name' => 'Conector USB-C Samsung', 'description' => 'Conector de carga USB-C para Samsung', 'brand' => 'Samsung', 'compatible_model' => 'Galaxy S23', 'current_stock' => 18, 'minimum_stock' => 10, 'purchase_price' => 20.00, 'sale_price' => 35.00, 'profit_margin' => 42.86, 'product_type' => 'part', 'physical_location' => 'Estante C2', 'status' => 'active'],
+            ['category_id' => $categories[2]->id, 'code' => 'CON001', 'name' => 'Conector Lightning iPhone', 'description' => 'Conector de carga Lightning para iPhone', 'brand_id' => $appleBrand->id, 'compatible_model' => 'iPhone 14', 'current_stock' => 30, 'minimum_stock' => 15, 'purchase_price' => 25.00, 'sale_price' => 45.00, 'profit_margin' => 44.44, 'product_type' => 'part', 'physical_location' => 'Estante C1', 'status' => 'active'],
+            ['category_id' => $categories[2]->id, 'code' => 'CON002', 'name' => 'Conector USB-C Samsung', 'description' => 'Conector de carga USB-C para Samsung', 'brand_id' => $samsungBrand->id, 'compatible_model' => 'Galaxy S23', 'current_stock' => 18, 'minimum_stock' => 10, 'purchase_price' => 20.00, 'sale_price' => 35.00, 'profit_margin' => 42.86, 'product_type' => 'part', 'physical_location' => 'Estante C2', 'status' => 'active'],
 
             // Herramientas
-            ['category_id' => $categories[5]->id, 'code' => 'HER001', 'name' => 'Kit Destornilladores', 'description' => 'Kit de destornilladores de precisión', 'brand' => 'Universal', 'compatible_model' => 'Universal', 'current_stock' => 12, 'minimum_stock' => 5, 'purchase_price' => 15.00, 'sale_price' => 30.00, 'profit_margin' => 50.00, 'product_type' => 'tool', 'physical_location' => 'Estante D1', 'status' => 'active'],
-            ['category_id' => $categories[5]->id, 'code' => 'HER002', 'name' => 'Pistola de Calor', 'description' => 'Pistola de calor para reparaciones', 'brand' => 'Universal', 'compatible_model' => 'Universal', 'current_stock' => 3, 'minimum_stock' => 2, 'purchase_price' => 60.00, 'sale_price' => 95.00, 'profit_margin' => 36.84, 'product_type' => 'tool', 'physical_location' => 'Estante D2', 'status' => 'active'],
+            ['category_id' => $categories[5]->id, 'code' => 'HER001', 'name' => 'Kit Destornilladores', 'description' => 'Kit de destornilladores de precisión', 'brand_id' => $universalBrand->id, 'compatible_model' => 'Universal', 'current_stock' => 12, 'minimum_stock' => 5, 'purchase_price' => 15.00, 'sale_price' => 30.00, 'profit_margin' => 50.00, 'product_type' => 'tool', 'physical_location' => 'Estante D1', 'status' => 'active'],
+            ['category_id' => $categories[5]->id, 'code' => 'HER002', 'name' => 'Pistola de Calor', 'description' => 'Pistola de calor para reparaciones', 'brand_id' => $universalBrand->id, 'compatible_model' => 'Universal', 'current_stock' => 3, 'minimum_stock' => 2, 'purchase_price' => 60.00, 'sale_price' => 95.00, 'profit_margin' => 36.84, 'product_type' => 'tool', 'physical_location' => 'Estante D2', 'status' => 'active'],
 
             // Accesorios
-            ['category_id' => $categories[6]->id, 'code' => 'ACC001', 'name' => 'Funda iPhone 14', 'description' => 'Funda protectora transparente', 'brand' => 'Generic', 'compatible_model' => 'iPhone 14', 'current_stock' => 50, 'minimum_stock' => 20, 'purchase_price' => 5.00, 'sale_price' => 15.00, 'profit_margin' => 66.67, 'product_type' => 'accessory', 'physical_location' => 'Estante E1', 'status' => 'active'],
-            ['category_id' => $categories[6]->id, 'code' => 'ACC002', 'name' => 'Protector Pantalla', 'description' => 'Protector de pantalla vidrio templado', 'brand' => 'Generic', 'compatible_model' => 'Universal', 'current_stock' => 100, 'minimum_stock' => 30, 'purchase_price' => 2.00, 'sale_price' => 8.00, 'profit_margin' => 75.00, 'product_type' => 'accessory', 'physical_location' => 'Estante E2', 'status' => 'active'],
+            ['category_id' => $categories[6]->id, 'code' => 'ACC001', 'name' => 'Funda iPhone 14', 'description' => 'Funda protectora transparente', 'brand_id' => $genericBrand->id, 'compatible_model' => 'iPhone 14', 'current_stock' => 50, 'minimum_stock' => 20, 'purchase_price' => 5.00, 'sale_price' => 15.00, 'profit_margin' => 66.67, 'product_type' => 'accessory', 'physical_location' => 'Estante E1', 'status' => 'active'],
+            ['category_id' => $categories[6]->id, 'code' => 'ACC002', 'name' => 'Protector Pantalla', 'description' => 'Protector de pantalla vidrio templado', 'brand_id' => $genericBrand->id, 'compatible_model' => 'Universal', 'current_stock' => 100, 'minimum_stock' => 30, 'purchase_price' => 2.00, 'sale_price' => 8.00, 'profit_margin' => 75.00, 'product_type' => 'accessory', 'physical_location' => 'Estante E2', 'status' => 'active'],
         ];
 
         $productModels = [];
@@ -759,19 +770,19 @@ class DatabaseSeeder extends Seeder
     {
         $quoteDetails = [
             // Quote 1 details
-            ['quote_id' => $quotes[0]->id, 'product_id' => $products[4]->id, 'description' => 'Conector Lightning iPhone', 'quantity' => 1, 'unit_price' => 45.00, 'total_price' => 45.00, 'item_type' => 'part'],
-            ['quote_id' => $quotes[0]->id, 'product_id' => null, 'description' => 'Mano de obra - Reemplazo conector', 'quantity' => 1, 'unit_price' => 25.00, 'total_price' => 25.00, 'item_type' => 'labor'],
+            ['quote_id' => $quotes[0]->id, 'product_id' => $products[4]->id, 'description' => 'Conector Lightning iPhone', 'quantity' => 1, 'unit_price' => 45.00, 'total_price' => 45.00, 'type' => 'product'],
+            ['quote_id' => $quotes[0]->id, 'product_id' => null, 'description' => 'Mano de obra - Reemplazo conector', 'quantity' => 1, 'unit_price' => 25.00, 'total_price' => 25.00, 'type' => 'labor'],
 
             // Quote 2 details
-            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Cámara trasera Huawei P50 Pro', 'quantity' => 1, 'unit_price' => 150.00, 'total_price' => 150.00, 'item_type' => 'part'],
-            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Diagnóstico completo', 'quantity' => 1, 'unit_price' => 25.00, 'total_price' => 25.00, 'item_type' => 'service'],
-            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Instalación y calibración', 'quantity' => 1, 'unit_price' => 15.00, 'total_price' => 15.00, 'item_type' => 'labor'],
-            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Pruebas de calidad', 'quantity' => 1, 'unit_price' => 10.00, 'total_price' => 10.00, 'item_type' => 'service'],
+            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Cámara trasera Huawei P50 Pro', 'quantity' => 1, 'unit_price' => 150.00, 'total_price' => 150.00, 'type' => 'product'],
+            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Diagnóstico completo', 'quantity' => 1, 'unit_price' => 25.00, 'total_price' => 25.00, 'type' => 'service'],
+            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Instalación y calibración', 'quantity' => 1, 'unit_price' => 15.00, 'total_price' => 15.00, 'type' => 'labor'],
+            ['quote_id' => $quotes[1]->id, 'product_id' => null, 'description' => 'Pruebas de calidad', 'quantity' => 1, 'unit_price' => 10.00, 'total_price' => 10.00, 'type' => 'service'],
 
             // Quote 3 details
-            ['quote_id' => $quotes[2]->id, 'product_id' => null, 'description' => 'Limpieza interna profesional', 'quantity' => 1, 'unit_price' => 20.00, 'total_price' => 20.00, 'item_type' => 'service'],
-            ['quote_id' => $quotes[2]->id, 'product_id' => null, 'description' => 'Actualización de software', 'quantity' => 1, 'unit_price' => 10.00, 'total_price' => 10.00, 'item_type' => 'service'],
-            ['quote_id' => $quotes[2]->id, 'product_id' => null, 'description' => 'Materiales de limpieza', 'quantity' => 1, 'unit_price' => 5.00, 'total_price' => 5.00, 'item_type' => 'other'],
+            ['quote_id' => $quotes[2]->id, 'product_id' => null, 'description' => 'Limpieza interna profesional', 'quantity' => 1, 'unit_price' => 20.00, 'total_price' => 20.00, 'type' => 'service'],
+            ['quote_id' => $quotes[2]->id, 'product_id' => null, 'description' => 'Actualización de software', 'quantity' => 1, 'unit_price' => 10.00, 'total_price' => 10.00, 'type' => 'service'],
+            ['quote_id' => $quotes[2]->id, 'product_id' => null, 'description' => 'Materiales de limpieza', 'quantity' => 1, 'unit_price' => 5.00, 'total_price' => 5.00, 'type' => 'service'],
         ];
 
         foreach ($quoteDetails as $detail) {

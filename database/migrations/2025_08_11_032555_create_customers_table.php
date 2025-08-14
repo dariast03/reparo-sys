@@ -16,7 +16,16 @@ return new class extends Migration
             $table->string('first_name', 100);
             $table->string('last_name', 100);
             $table->string('document_number', 50)->nullable();
-            $table->enum('document_type', ['id_card', 'passport', 'other'])->default('id_card');
+            $table->enum('document_type', [
+                'ci',             // Cédula de Identidad
+                'passport',       // Pasaporte
+                'driver_license', // Licencia de Conducir
+                'foreigner_id',   // Carnet de Extranjero
+                'nit',            // Número de Identificación Tributaria
+                'military_id',    // Libreta Militar
+                'other'           // Otro
+            ])->default('ci');
+
             $table->string('phone', 20)->nullable();
             $table->string('email', 100)->nullable();
             $table->text('address')->nullable();

@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderPart extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = [
         'repair_order_id',
         'product_id',

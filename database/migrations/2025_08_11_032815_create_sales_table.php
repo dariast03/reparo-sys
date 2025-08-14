@@ -24,10 +24,11 @@ return new class extends Migration
             $table->decimal('advance_payment', 10, 2)->default(0.00);
             $table->decimal('pending_balance', 10, 2)->default(0.00);
             $table->enum('status', ['pending', 'paid', 'cancelled'])->default('pending');
-            $table->enum('payment_method', ['cash', 'card', 'transfer', 'mixed'])->default('cash');
+            $table->enum('payment_method', ['cash', 'card', 'transfer', 'qr', 'mixed'])->default('cash');
             $table->text('notes')->nullable();
             $table->timestamp('sale_date')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+
+            $table->timestamps();
 
             // Indices
             $table->index('sale_number', 'idx_sale_number');

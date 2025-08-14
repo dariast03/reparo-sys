@@ -31,7 +31,7 @@ return new class extends Migration
             $table->timestamp('quote_date')->useCurrent();
             $table->date('expiry_date');
             $table->dateTime('response_date')->nullable();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
 
             // Indices
             $table->index('quote_number', 'idx_quote_number');

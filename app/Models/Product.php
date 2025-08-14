@@ -10,10 +10,10 @@ class Product extends Model
 {
     protected $fillable = [
         'category_id',
+        'brand_id',
         'code',
         'name',
         'description',
-        'brand',
         'compatible_model',
         'current_stock',
         'minimum_stock',
@@ -35,10 +35,21 @@ class Product extends Model
         'status' => 'string',
     ];
 
+    protected $appends = [
+        'price',
+        'stock',
+        'sale_price_number',
+    ];
+
     // Relationships
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProductCategory::class, 'category_id');
+    }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
     }
 
     public function inventoryMovements(): HasMany
@@ -75,6 +86,22 @@ class Product extends Model
     public function getProfitAmountAttribute(): float
     {
         return $this->sale_price - $this->purchase_price;
+    }
+
+    // Compatibility accessors for frontend
+    public function getPriceAttribute()
+    {
+        return $this->sale_price;
+    }
+
+    public function getStockAttribute()
+    {
+        return $this->current_stock;
+    }
+
+    public function getSalePriceNumberAttribute()
+    {
+        return (float) $this->sale_price;
     }
 
     // Scopes

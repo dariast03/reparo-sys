@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sale extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = [
         'sale_number',
         'customer_id',
@@ -39,6 +37,46 @@ class Sale extends Model
         'sale_date' => 'timestamp',
         'updated_at' => 'timestamp',
     ];
+
+    // Accessors para convertir decimales a números para JS
+    protected $appends = [
+        'subtotal_number',
+        'discount_number',
+        'taxes_number',
+        'total_number',
+        'advance_payment_number',
+        'pending_balance_number'
+    ];
+
+    public function getSubtotalNumberAttribute()
+    {
+        return (float) $this->subtotal;
+    }
+
+    public function getDiscountNumberAttribute()
+    {
+        return (float) $this->discount;
+    }
+
+    public function getTaxesNumberAttribute()
+    {
+        return (float) $this->taxes;
+    }
+
+    public function getTotalNumberAttribute()
+    {
+        return (float) $this->total;
+    }
+
+    public function getAdvancePaymentNumberAttribute()
+    {
+        return (float) $this->advance_payment;
+    }
+
+    public function getPendingBalanceNumberAttribute()
+    {
+        return (float) $this->pending_balance;
+    }
 
     // Relationships
     public function customer(): BelongsTo

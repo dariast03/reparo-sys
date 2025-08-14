@@ -17,8 +17,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->enum('device_type', ['phone', 'tablet', 'laptop', 'smartwatch', 'other']);
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
 
             // Unique constraint
             $table->unique(['brand_id', 'name'], 'unique_brand_model');

@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InventoryMovement extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = [
         'product_id',
         'user_id',
@@ -21,6 +19,7 @@ class InventoryMovement extends Model
         'notes',
         'stock_before',
         'stock_after',
+        'movement_date',
     ];
 
     protected $casts = [

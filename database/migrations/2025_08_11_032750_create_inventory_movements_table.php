@@ -25,6 +25,7 @@ return new class extends Migration
             $table->integer('stock_before');
             $table->integer('stock_after');
             $table->timestamp('movement_date')->useCurrent();
+            $table->timestamps();
 
             // Indices
             $table->index('movement_date', 'idx_movement_date');

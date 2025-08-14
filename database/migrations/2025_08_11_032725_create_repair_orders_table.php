@@ -52,7 +52,7 @@ return new class extends Migration
             $table->dateTime('diagnosis_date')->nullable();
             $table->dateTime('repair_date')->nullable();
             $table->dateTime('delivery_date')->nullable();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
 
             // Indices
             $table->index('order_number', 'idx_order_number');

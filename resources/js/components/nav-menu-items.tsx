@@ -1,18 +1,5 @@
 import { NavGroup } from '@/types';
-import {
-    BarChart3,
-    ClipboardList,
-    DollarSign,
-    Key,
-    LayoutGrid,
-    MonitorSmartphone,
-    Package,
-    Shield,
-    User,
-    UserCog,
-    Users,
-    Wrench,
-} from 'lucide-react';
+import { DollarSign, FileText, History, Home, Key, Package, Settings, Shield, Smartphone, Store, User, Users, Warehouse, Wrench } from 'lucide-react';
 
 export const navMenuItems: NavGroup[] = [
     {
@@ -21,58 +8,88 @@ export const navMenuItems: NavGroup[] = [
             {
                 title: 'Dashboard',
                 href: '/dashboard',
-                icon: LayoutGrid,
+                icon: Home,
             },
         ],
     },
     {
-        title: 'Gestión',
+        title: 'Operaciones',
         items: [
             {
-                title: 'Reparaciones',
-                href: '/reparaciones',
+                title: 'Órdenes de Reparación',
+                href: '/admin/repair-orders',
                 icon: Wrench,
             },
             {
+                title: 'Cotizaciones',
+                href: '/admin/quotes',
+                icon: FileText,
+            },
+            {
                 title: 'Clientes',
-                href: '/clientes',
+                href: '/admin/customers',
                 icon: User,
-            },
-            {
-                title: 'Dispositivos',
-                href: '/dispositivos',
-                icon: MonitorSmartphone,
-            },
-            {
-                title: 'Técnicos',
-                href: '/tecnicos',
-                icon: UserCog,
-            },
-            {
-                title: 'Inventario',
-                href: '/inventario',
-                icon: Package,
-            },
-            {
-                title: 'Ingresos',
-                href: '/ingresos',
-                icon: DollarSign,
-            },
-            {
-                title: 'Reportes',
-                href: '/reportes',
-                icon: BarChart3,
             },
         ],
     },
     {
-        title: 'Administración',
+        title: 'Inventario',
         items: [
             {
-                title: 'Panel Admin',
-                href: '/admin/dashboard',
-                icon: ClipboardList,
+                title: 'Productos',
+                href: '/admin/products',
+                icon: Package,
             },
+            {
+                title: 'Categorías',
+                href: '/admin/categories',
+                icon: Store,
+            },
+            {
+                title: 'Marcas',
+                href: '/admin/brands',
+                icon: Smartphone,
+            },
+            {
+                title: 'Modelos',
+                href: '/admin/device-models',
+                icon: Smartphone,
+            },
+            {
+                title: 'Movimientos',
+                href: '/admin/inventory/movements',
+                icon: History,
+            },
+            {
+                title: 'Gestión Stock',
+                href: '/admin/inventory/stock',
+                icon: Warehouse,
+            },
+        ],
+    },
+    {
+        title: 'Ventas',
+        items: [
+            {
+                title: 'Ventas',
+                href: '/admin/sales',
+                icon: DollarSign,
+            },
+        ],
+    },
+    /*  {
+        title: 'Reportes',
+        items: [
+            {
+                title: 'Reportes',
+                href: '/admin/reports',
+                icon: BarChart3,
+            },
+        ],
+    }, */
+    {
+        title: 'Administración',
+        items: [
             {
                 title: 'Usuarios',
                 href: '/admin/users',
@@ -87,6 +104,11 @@ export const navMenuItems: NavGroup[] = [
                 title: 'Permisos',
                 href: '/admin/permissions',
                 icon: Key,
+            },
+            {
+                title: 'Configuración',
+                href: '/admin/settings',
+                icon: Settings,
             },
         ],
     },

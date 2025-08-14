@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_price', 10, 2);
             $table->timestamp('usage_date')->useCurrent();
+            $table->timestamps();
 
             // Unique constraint
             $table->unique(['repair_order_id', 'product_id'], 'unique_order_product');

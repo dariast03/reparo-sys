@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Quote extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = [
         'quote_number',
         'customer_id',

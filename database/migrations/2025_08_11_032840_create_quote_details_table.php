@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('quote_id')->constrained('quotes')->cascadeOnDelete();
             $table->foreignId('product_id')->nullable()->constrained('products')->nullOnDelete();
-            $table->string('description', 200);
-            $table->integer('quantity');
+            $table->string('description', 255);
+            $table->decimal('quantity', 8, 2)->default(1);
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_price', 10, 2);
-            $table->enum('item_type', ['part', 'labor', 'service', 'other']);
+            $table->enum('type', ['product', 'labor', 'service'])->default('product');
 
             $table->timestamps();
         });

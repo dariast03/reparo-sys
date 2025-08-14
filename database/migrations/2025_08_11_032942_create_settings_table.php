@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('setting_value');
             $table->string('description', 200)->nullable();
             $table->enum('data_type', ['string', 'integer', 'decimal', 'boolean', 'json'])->default('string');
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
         });
     }
 

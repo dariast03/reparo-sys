@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Root',
             'username' => 'root',
             'email' => 'root@gmail.com',
-            'password' => Hash::make('12345678'),
+            'password' => Hash::make('Admin123+'),
         ]);
 
         // Assign admin role to admin user

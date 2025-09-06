@@ -6,8 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
+use App\Models\RepairOrder;
+use App\Mail\CustomerWelcomeQrMail;
+use App\Services\NotificationService;
+use App\Jobs\SendWelcomeNotificationJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -65,16 +71,35 @@ class CustomerController extends Controller
     /**
      * Store a newly created customer in storage.
      */
-    public function store(StoreCustomerRequest $request)
+    public function store(StoreCustomerRequest $request, NotificationService $notificationService)
     {
         $validated = $request->validated();
 
         try {
             $customer = Customer::create($validated);
 
+            // Dispatch welcome notifications job (async)
+            $channels = [];
+            if ($customer->email) $channels[] = 'email';
+            if ($customer->phone) $channels[] = 'whatsapp';
+
+            if (!empty($channels)) {
+                SendWelcomeNotificationJob::dispatch($customer, $channels);
+            }
+
+            // Prepare success message
+            $successMessage = 'Cliente registrado exitosamente.';
+            if (!empty($channels)) {
+                $channelNames = [];
+                if (in_array('email', $channels)) $channelNames[] = 'correo electrónico';
+                if (in_array('whatsapp', $channels)) $channelNames[] = 'WhatsApp';
+
+                $successMessage .= ' Se están enviando las notificaciones de bienvenida por ' . implode(' y ', $channelNames) . '.';
+            }
+
             return redirect()
                 ->route('admin.customers.show', $customer)
-                ->with('success', 'Cliente registrado exitosamente.');
+                ->with('success', $successMessage);
         } catch (\Exception $e) {
             return back()
                 ->withErrors(['error' => 'Error al registrar el cliente: ' . $e->getMessage()])
@@ -227,5 +252,97 @@ class CustomerController extends Controller
             });
 
         return response()->json($customers);
+    }
+
+    /**
+     * Send QR notifications to customer (email and/or WhatsApp)
+     */
+    public function sendQrEmail(Customer $customer, NotificationService $notificationService)
+    {
+        try {
+            // Determine available channels
+            $channels = [];
+            if ($customer->email) $channels[] = 'email';
+            if ($customer->phone) $channels[] = 'whatsapp';
+
+            if (empty($channels)) {
+                return back()->withErrors([
+                    'error' => 'El cliente no tiene email ni teléfono registrado.'
+                ]);
+            }
+
+            // Send notifications
+            $notificationResults = $notificationService->sendWelcomeQr($customer, $channels);
+            $summary = $notificationService->getNotificationSummary($notificationResults);
+
+            if ($summary['success_count'] > 0) {
+                $successChannels = implode(' y ', $summary['successful_channels']);
+                $message = 'Código QR enviado exitosamente por ' . $successChannels . '.';
+
+                if ($summary['failure_count'] > 0) {
+                    $failedChannels = implode(' y ', $summary['failed_channels']);
+                    $message .= ' No se pudo enviar por ' . $failedChannels . '.';
+                }
+
+                return back()->with('success', $message);
+            } else {
+                return back()->withErrors([
+                    'error' => 'No se pudo enviar el código QR. ' . implode(' ', $summary['messages'])
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send QR notifications to customer ' . $customer->id . ': ' . $e->getMessage());
+
+            return back()->withErrors([
+                'error' => 'Error al enviar las notificaciones: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Send repair order status notification to customer
+     */
+    public function sendRepairOrderStatus(Customer $customer, Request $request, NotificationService $notificationService)
+    {
+        try {
+            $repairOrderId = $request->get('repair_order_id');
+
+            if (!$repairOrderId) {
+                return back()->withErrors([
+                    'error' => 'ID de orden de reparación requerido.'
+                ]);
+            }
+
+            $repairOrder = RepairOrder::where('id', $repairOrderId)
+                ->where('customer_id', $customer->id)
+                ->with('customer', 'brand', 'model')
+                ->first();
+
+            if (!$repairOrder) {
+                return back()->withErrors([
+                    'error' => 'Orden de reparación no encontrada.'
+                ]);
+            }
+
+            // Send notification
+            $notificationResults = $notificationService->sendRepairOrderStatus($repairOrder, ['whatsapp']);
+            $summary = $notificationService->getNotificationSummary($notificationResults);
+
+            if ($summary['success_count'] > 0) {
+                return back()->with('success', 'Notificación de estado enviada exitosamente por WhatsApp.');
+            } else {
+                return back()->withErrors([
+                    'error' => 'No se pudo enviar la notificación. ' . implode(' ', $summary['messages'])
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send repair order status notification to customer ' . $customer->id . ': ' . $e->getMessage());
+
+            return back()->withErrors([
+                'error' => 'Error al enviar la notificación: ' . $e->getMessage()
+            ]);
+        }
     }
 }

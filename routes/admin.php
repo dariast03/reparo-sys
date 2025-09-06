@@ -37,6 +37,7 @@ Route::group([
     // Customers Management
     Route::resource('customers', CustomerController::class);
     Route::patch('customers/{customer}/reactivate', [CustomerController::class, 'reactivate'])->name('customers.reactivate');
+    Route::post('customers/{customer}/send-qr-email', [CustomerController::class, 'sendQrEmail'])->name('customers.send-qr-email');
     Route::get('api/customers/search', [CustomerController::class, 'search'])->name('customers.search');
 
     // Brands Management

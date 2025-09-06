@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Calendar, Edit, FileText, Mail, MapPin, Phone, ShoppingCart, User, UserCheck, UserX, Wrench } from 'lucide-react';
+import { ArrowLeft, Calendar, Edit, FileText, Mail, MapPin, Phone, QrCode, Send, ShoppingCart, User, UserCheck, UserX, Wrench } from 'lucide-react';
 
 interface Customer {
     id: number;
@@ -30,6 +30,10 @@ interface Customer {
     gender: string;
     notes: string;
     status: 'active' | 'inactive';
+    qr_code?: string;
+    qr_url?: string;
+    qr_base64?: string;
+    qr_data_uri?: string;
     created_at: string;
     updated_at: string;
     repair_orders?: Array<{
@@ -103,6 +107,16 @@ export default function ShowCustomer({ customer, statistics }: ShowCustomerProps
         );
     };
 
+    const handleSendQrEmail = () => {
+        router.post(
+            `/admin/customers/${customer.id}/send-qr-email`,
+            {},
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
     const getStatusBadge = (status: string) => {
         return status === 'active' ? (
             <Badge variant="default" className="bg-green-100 text-green-800">
@@ -156,6 +170,12 @@ export default function ShowCustomer({ customer, statistics }: ShowCustomerProps
                                 Editar
                             </Button>
                         </Link>
+                        {customer.email && (
+                            <Button variant="outline" onClick={handleSendQrEmail}>
+                                <Send className="mr-2 h-4 w-4" />
+                                Enviar QR
+                            </Button>
+                        )}
                         {customer.status === 'active' ? (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -301,6 +321,36 @@ export default function ShowCustomer({ customer, statistics }: ShowCustomerProps
                                         </div>
                                     )}
                                 </div>
+
+                                {customer.qr_code && (
+                                    <>
+                                        <Separator className="my-4" />
+                                        <div className="text-center">
+                                            <div className="flex items-center justify-center gap-2 mb-3">
+                                                <QrCode className="h-5 w-5 text-muted-foreground" />
+                                                <label className="text-sm font-medium text-muted-foreground">Código QR del Cliente</label>
+                                            </div>
+                                            <div className="flex justify-center p-3 bg-white rounded-lg border">
+                                                <img
+                                                    src={customer.qr_data_uri}
+                                                    alt={`QR Code for ${customer.first_name} ${customer.last_name}`}
+                                                    className="w-32 h-32"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-2 font-mono">{customer.qr_code}</p>
+                                            {customer.qr_url && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="mt-3"
+                                                    onClick={() => window.open(customer.qr_url, '_blank')}
+                                                >
+                                                    Ver Portal del Cliente
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
                     </div>

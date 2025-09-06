@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'base_url' => env('WHATSAPP_BASE_URL', 'https://wcm.vendisqr.com'),
+        'session_name' => env('WHATSAPP_SESSION_NAME'),
+        'api_key' => env('WHATSAPP_API_KEY'),
+    ],
+
 ];

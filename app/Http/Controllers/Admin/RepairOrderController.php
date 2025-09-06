@@ -10,6 +10,8 @@ use App\Models\Customer;
 use App\Models\DeviceModel;
 use App\Models\RepairOrder;
 use App\Models\User;
+use App\Services\NotificationService;
+use App\Jobs\SendRepairOrderStatusNotificationJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -65,13 +67,21 @@ class RepairOrderController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $preselectedCustomerId = $request->get('customer_id');
+        $preselectedCustomer = null;
+
+        if ($preselectedCustomerId) {
+            $preselectedCustomer = Customer::where('id', $preselectedCustomerId)->where('status', 'active')->first();
+        }
+
         return Inertia::render('admin/repair-orders/create', [
             'customers' => Customer::where('status', 'active')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'document_number']),
             'brands' => Brand::active()->orderBy('name')->get(['id', 'name']),
             'technicians' => User::orderBy('name')->get(['id', 'name']),
             'orderNumber' => $this->generateOrderNumber(),
+            'preselectedCustomer' => $preselectedCustomer,
         ]);
     }
 
@@ -122,27 +132,50 @@ class RepairOrderController extends Controller
         ]);
     }
 
-    public function update(UpdateRepairOrderRequest $request, RepairOrder $repairOrder)
+    public function update(UpdateRepairOrderRequest $request, RepairOrder $repairOrder, NotificationService $notificationService)
     {
         $data = $request->validated();
+        $oldStatus = $repairOrder->status;
 
         // Calculate pending balance
         $data['pending_balance'] = $data['total_cost'] - $data['advance_payment'];
 
         $repairOrder->update($data);
 
+        // Check if status has changed to send notification
+        $newStatus = $repairOrder->fresh()->status;
+        if ($oldStatus !== $newStatus) {
+            // Dispatch WhatsApp notification job for status change (async)
+            SendRepairOrderStatusNotificationJob::dispatch($repairOrder, ['whatsapp'], $oldStatus);
+
+            \Illuminate\Support\Facades\Log::info('Repair order status notification job dispatched', [
+                'repair_order_id' => $repairOrder->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus
+            ]);
+        }
+
         return redirect()->route('admin.repair-orders.show', $repairOrder)
             ->with('success', 'Orden de reparación actualizada exitosamente.');
     }
 
-    public function destroy(RepairOrder $repairOrder)
+    public function destroy(RepairOrder $repairOrder, NotificationService $notificationService)
     {
         // Only allow cancellation if order is not delivered
         if ($repairOrder->status === 'delivered') {
             return back()->with('error', 'No se puede cancelar una orden ya entregada.');
         }
 
+        $oldStatus = $repairOrder->status;
         $repairOrder->update(['status' => 'cancelled']);
+
+        // Dispatch notification job about cancellation (async)
+        SendRepairOrderStatusNotificationJob::dispatch($repairOrder, ['whatsapp'], $oldStatus);
+
+        \Illuminate\Support\Facades\Log::info('Repair order cancellation notification job dispatched', [
+            'repair_order_id' => $repairOrder->id,
+            'old_status' => $oldStatus
+        ]);
 
         return back()->with('success', 'Orden de reparación cancelada exitosamente.');
     }

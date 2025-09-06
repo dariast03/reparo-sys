@@ -14,9 +14,11 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
-use App\Mail\QuoteSent;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\QuoteSent;
+use App\Services\NotificationService;
+use App\Jobs\SendQuoteNotificationJob;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuoteController extends Controller
 {
@@ -53,6 +55,13 @@ class QuoteController extends Controller
 
     public function create(Request $request)
     {
+        $preselectedCustomerId = $request->get('customer_id');
+        $preselectedCustomer = null;
+
+        if ($preselectedCustomerId) {
+            $preselectedCustomer = Customer::where('id', $preselectedCustomerId)->first();
+        }
+
         $customers = Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'email', 'document_number']);
         $repairOrders = RepairOrder::with('customer')
             ->whereIn('status', ['received', 'diagnosing'])
@@ -74,6 +83,7 @@ class QuoteController extends Controller
             'products' => $products,
             'users' => $users,
             'quoteNumber' => $quoteNumber,
+            'preselectedCustomer' => $preselectedCustomer,
         ]);
     }
 
@@ -172,7 +182,7 @@ class QuoteController extends Controller
             ->with('success', 'Cotización eliminada exitosamente.');
     }
 
-    public function sendEmail(Quote $quote)
+    public function sendEmail(Quote $quote, NotificationService $notificationService)
     {
         $quote->load(['customer', 'user', 'quoteDetails']);
 
@@ -187,11 +197,114 @@ class QuoteController extends Controller
             // Send email
             Mail::to($quote->customer->email)->send(new QuoteSent($quote, $pdf));
 
-            $quote->update(['status' => 'sent']);
+            // Also send by WhatsApp if customer has phone
+            if ($quote->customer->phone) {
+                // Save PDF temporarily for WhatsApp
+                $pdfUrl = $this->savePdfTemporarily($quote, $pdf);
 
+                // Send WhatsApp notification asynchronously
+                SendQuoteNotificationJob::dispatch($quote, $pdfUrl, ['whatsapp']);
+
+                $quote->update(['status' => 'sent']);
+                return back()->with('success', 'Cotización enviada por email exitosamente y se está enviando por WhatsApp.');
+            }
+
+            $quote->update(['status' => 'sent']);
             return back()->with('success', 'Cotización enviada por email exitosamente.');
         } catch (\Exception $e) {
             return back()->with('error', 'Error al enviar la cotización: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send quote via WhatsApp
+     */
+    public function sendWhatsApp(Quote $quote, NotificationService $notificationService)
+    {
+        $quote->load(['customer', 'user', 'quoteDetails']);
+
+        if (!$quote->customer->phone) {
+            return back()->with('error', 'El cliente no tiene teléfono registrado.');
+        }
+
+        try {
+            // Generate PDF
+            $pdf = $this->generatePDF($quote);
+
+            // Save PDF temporarily for WhatsApp
+            $pdfUrl = $this->savePdfTemporarily($quote, $pdf);
+
+            // Send WhatsApp notification
+            $results = $notificationService->sendQuoteNotification($quote, $pdfUrl, ['whatsapp']);
+            $summary = $notificationService->getNotificationSummary($results);
+
+            if ($summary['success_count'] > 0) {
+                $quote->update(['status' => 'sent']);
+                return back()->with('success', 'Cotización enviada por WhatsApp exitosamente a ' . $quote->customer->phone);
+            } else {
+                return back()->with('error', 'Error al enviar cotización por WhatsApp: ' . implode(' ', $summary['messages']));
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al enviar la cotización: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send quote via both email and WhatsApp
+     */
+    public function sendBoth(Quote $quote, NotificationService $notificationService)
+    {
+        $quote->load(['customer', 'user', 'quoteDetails']);
+
+        $channels = [];
+        $errors = [];
+
+        // Check available channels
+        if (!$quote->customer->email && !$quote->customer->phone) {
+            return back()->with('error', 'El cliente no tiene email ni teléfono registrado.');
+        }
+
+        try {
+            // Generate PDF
+            $pdf = $this->generatePDF($quote);
+            $messages = [];
+
+            // Send email if available
+            if ($quote->customer->email) {
+                try {
+                    Mail::to($quote->customer->email)->send(new QuoteSent($quote, $pdf));
+                    $messages[] = 'Email enviado exitosamente';
+                    $channels[] = 'email';
+                } catch (\Exception $e) {
+                    $errors[] = 'Error al enviar email: ' . $e->getMessage();
+                }
+            }
+
+            // Send WhatsApp if available
+            if ($quote->customer->phone) {
+                // Save PDF temporarily for WhatsApp
+                $pdfUrl = $this->savePdfTemporarily($quote, $pdf);
+
+                // Send WhatsApp notification asynchronously
+                SendQuoteNotificationJob::dispatch($quote, $pdfUrl, ['whatsapp']);
+                $messages[] = 'WhatsApp enviándose en segundo plano';
+                $channels[] = 'whatsapp';
+            }
+
+            if (!empty($channels)) {
+                $quote->update(['status' => 'sent']);
+                $successMessage = 'Cotización enviada por: ' . implode(' y ', $channels);
+                if (!empty($errors)) {
+                    $successMessage .= '. Errores: ' . implode(', ', $errors);
+                }
+                return back()->with('success', $successMessage);
+            } else {
+                return back()->with('error', 'No se pudo enviar la cotización por ningún canal: ' . implode(', ', $errors));
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al procesar la cotización: ' . $e->getMessage());
         }
     }
 
@@ -255,5 +368,20 @@ class QuoteController extends Controller
     {
         $pdf = Pdf::loadView('pdfs.quote', compact('quote'));
         return $pdf;
+    }
+
+    /**
+     * Save PDF temporarily for WhatsApp sharing
+     */
+    private function savePdfTemporarily(Quote $quote, $pdf): string
+    {
+        $fileName = "temp/quotes/cotizacion-{$quote->quote_number}-" . time() . ".pdf";
+        $pdfContent = $pdf->output();
+
+        // Save to public storage
+        Storage::disk('public')->put($fileName, $pdfContent);
+
+        // Return public URL
+        return url('storage/' . $fileName);
     }
 }

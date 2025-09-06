@@ -12,12 +12,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Pencil, PlusCircle, UserCheck, UserX } from 'lucide-react';
+import { Download, Eye, Pencil, PlusCircle, QrCode, UserCheck, UserX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Customer {
@@ -32,6 +33,10 @@ interface Customer {
     birth_date: string;
     gender: string;
     status: 'active' | 'inactive';
+    qr_code: string;
+    qr_url: string;
+    qr_base64: string;
+    qr_data_uri: string;
     created_at: string;
     updated_at: string;
 }
@@ -129,6 +134,16 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                 Inactivo
             </Badge>
         );
+    };
+
+    const downloadQR = (customer: Customer) => {
+        // Create a link element and trigger download
+        const link = document.createElement('a');
+        link.href = customer.qr_data_uri;
+        link.download = `qr-cliente-${customer.first_name}-${customer.last_name}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -280,13 +295,14 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                     <TableHead>Contacto</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead>Fecha Registro</TableHead>
+                                    <TableHead>Código QR</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {customers.data.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="py-12 text-center">
+                                        <TableCell colSpan={7} className="py-12 text-center">
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className="text-4xl">🔍</div>
                                                 <div className="text-lg font-medium text-muted-foreground">
@@ -326,6 +342,44 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                             </TableCell>
                                             <TableCell>{getStatusBadge(customer.status)}</TableCell>
                                             <TableCell>{new Date(customer.created_at).toLocaleDateString('es-ES')}</TableCell>
+                                            <TableCell>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                            <QrCode className="h-4 w-4" />
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="sm:max-w-md">
+                                                        <DialogHeader>
+                                                            <DialogTitle>
+                                                                Código QR - {customer.first_name} {customer.last_name}
+                                                            </DialogTitle>
+                                                            <DialogDescription>
+                                                                Escanea este código para acceder rápidamente a la información del cliente.
+                                                            </DialogDescription>
+                                                        </DialogHeader>
+                                                        <div className="flex flex-col items-center justify-center space-y-4">
+                                                            <div className="bg-white p-4 rounded-lg border">
+                                                                <img
+                                                                    src={customer.qr_data_uri}
+                                                                    alt={`QR Code for ${customer.first_name} ${customer.last_name}`}
+                                                                    className="w-48 h-48"
+                                                                />
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground text-center">
+                                                                <p>Código: <code className="bg-muted px-2 py-1 rounded">{customer.qr_code}</code></p>
+                                                                <p className="mt-1">URL: <code className="bg-muted px-2 py-1 rounded text-xs">{customer.qr_url}</code></p>
+                                                            </div>
+                                                        </div>
+                                                        <DialogFooter>
+                                                            <Button onClick={() => downloadQR(customer)} className="w-full">
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                Descargar QR
+                                                            </Button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Link href={`/admin/customers/${customer.id}`}>

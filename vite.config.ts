@@ -14,6 +14,15 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+ /*    server: {
+        host: '0.0.0.0',
+        cors: true,
+        hmr: {
+            protocol: 'wss',
+            host: 's12nr0d7-5173.brs.devtunnels.ms',
+            port: 443,
+        },
+    }, */
     esbuild: {
         jsx: 'automatic',
     },

@@ -160,10 +160,10 @@ class WhatsAppService
                 'jid' => $jid,
                 'type' => 'number',
                 'message' => [
-              /*       'image' => [
+                    'image' => [
                         'url' => $imageUrl
-                    ], */
-                    'text' => $caption
+                    ],
+                    'caption' => $caption
                 ]
             ];
 

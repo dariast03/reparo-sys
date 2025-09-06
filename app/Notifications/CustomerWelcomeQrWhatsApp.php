@@ -113,13 +113,13 @@ class CustomerWelcomeQrWhatsApp
 
             // Clean up temporary file after a delay (you might want to use a job for this)
             // For now, we'll delete it immediately after sending
-            $fileDeleted = Storage::disk('public')->delete($fileName);
+            /* $fileDeleted = Storage::disk('public')->delete($fileName);
 
             Log::info('CustomerWelcomeQrWhatsApp: Temporary file cleanup', [
                 'customer_id' => $customer->id,
                 'file_name' => $fileName,
                 'file_deleted' => $fileDeleted
-            ]);
+            ]); */
 
             return $success;
 

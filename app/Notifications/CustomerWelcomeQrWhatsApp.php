@@ -82,14 +82,17 @@ class CustomerWelcomeQrWhatsApp
                 'file_exists' => Storage::disk('public')->exists($fileName)
             ]);
 
-            $message = "Estimado/a {$customer->full_name},\n\n" .
-                      "Te damos la bienvenida a" . config('app.name') . "!\n\n" .
-                      "Aquí tienes tu código QR personal para acceder rápidamente a tus órdenes de reparación.\n\n" .
-                      "Con este código QR puedes:\n" .
-                      "✅ Ver el estado de tus reparaciones\n" .
-                      "✅ Recibir notificaciones de progreso\n" .
-                      "✅ Acceder a tu historial de servicios\n\n" .
-                      "¡Guarda este mensaje para futuras consultas!";
+            $message = "¡Hola *{$customer->full_name}*!\n\n" .
+                "🎉 Te damos la bienvenida a *" . config('app.name') . "* 🎉\n\n" .
+                "Aquí tienes tu *código QR personal* para acceder rápidamente a tus órdenes de reparación.\n\n" .
+                "*Con este código QR podrás:*\n" .
+                "✅ Ver el estado de tus reparaciones\n" .
+                "✅ Recibir notificaciones de progreso\n" .
+                "✅ Acceder a tu historial de servicios\n\n" .
+                "Si no deseas escanear el código, también puedes acceder usando este enlace:\n" .
+                "*{$customer->qr_url}*\n\n" .
+                "💡 *Tip:* ¡Guarda este mensaje para futuras consultas y tener todo a mano!";
+
 
             Log::info('CustomerWelcomeQrWhatsApp: Sending WhatsApp image message', [
                 'customer_id' => $customer->id,
@@ -113,13 +116,13 @@ class CustomerWelcomeQrWhatsApp
 
             // Clean up temporary file after a delay (you might want to use a job for this)
             // For now, we'll delete it immediately after sending
-            /* $fileDeleted = Storage::disk('public')->delete($fileName);
+            $fileDeleted = Storage::disk('public')->delete($fileName);
 
             Log::info('CustomerWelcomeQrWhatsApp: Temporary file cleanup', [
                 'customer_id' => $customer->id,
                 'file_name' => $fileName,
                 'file_deleted' => $fileDeleted
-            ]); */
+            ]);
 
             return $success;
 

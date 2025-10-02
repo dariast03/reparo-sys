@@ -9,15 +9,15 @@ import { Head, useForm } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Admin',
+        title: 'Administrador',
         href: '/admin',
     },
     {
-        title: 'Users',
+        title: 'Usuarios',
         href: '/admin/users',
     },
     {
-        title: 'Create',
+        title: 'Crear',
         href: '/admin/users/create',
     },
 ];
@@ -27,7 +27,7 @@ interface CreateUserProps {
 }
 
 export default function CreateUser({ roles }: CreateUserProps) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError } = useForm({
         name: '',
         username: '',
         email: '',
@@ -36,8 +36,34 @@ export default function CreateUser({ roles }: CreateUserProps) {
         roles: [] as number[],
     });
 
+    const validatePassword = (password: string): string | null => {
+        if (password.length < 8) {
+            return 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        if (!/[a-z]/.test(password)) {
+            return 'La contraseña debe contener al menos una letra minúscula.';
+        }
+        if (!/[A-Z]/.test(password)) {
+            return 'La contraseña debe contener al menos una letra mayúscula.';
+        }
+        if (!/\d/.test(password)) {
+            return 'La contraseña debe contener al menos un número.';
+        }
+
+        return null;
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        /*  const passwordError = validatePassword(data.password);
+        if (passwordError) {
+            setError('password', passwordError);
+            return;
+        }
+        if (data.password !== data.password_confirmation) {
+            setError('password_confirmation', 'Las contraseñas no coinciden.');
+            return;
+        } */
         post('/admin/users');
     };
 
@@ -56,58 +82,62 @@ export default function CreateUser({ roles }: CreateUserProps) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create User" />
+            <Head title="Crear Usuario" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div>
-                    <h1 className="text-2xl font-bold">Create User</h1>
-                    <p className="text-muted-foreground">Add a new user to the system</p>
+                    <h1 className="text-2xl font-bold">Crear Usuario</h1>
+                    <p className="text-muted-foreground">Agregar un nuevo usuario al sistema</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>User Details</CardTitle>
-                            <CardDescription>Enter the details for the new user</CardDescription>
+                            <CardTitle>Detalles del Usuario</CardTitle>
+                            <CardDescription>Ingrese los detalles para el nuevo usuario</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name">Nombre</Label>
                                 <Input
                                     id="name"
                                     value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="John Doe"
+                                    onChange={(e) => {
+                                        setData('name', e.target.value);
+
+                                        setData('username', e.target.value.replace(/\s+/g, '_').toLowerCase());
+                                    }}
+                                    placeholder="Juan Pérez"
                                     required
                                 />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="username">Username (Optional)</Label>
+                                <Label htmlFor="username">Nombre de Usuario (Opcional)</Label>
                                 <Input
                                     id="username"
                                     value={data.username}
                                     onChange={(e) => setData('username', e.target.value)}
-                                    placeholder="johndoe"
+                                    placeholder="juanperez"
                                 />
                                 {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">Correo Electrónico</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
-                                    placeholder="john@example.com"
+                                    placeholder="juan@example.com"
                                     required
                                 />
                                 {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">Contraseña</Label>
                                 <Input
                                     id="password"
                                     type="password"
@@ -119,7 +149,7 @@ export default function CreateUser({ roles }: CreateUserProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                <Label htmlFor="password_confirmation">Confirmar Contraseña</Label>
                                 <Input
                                     id="password_confirmation"
                                     type="password"
@@ -151,10 +181,10 @@ export default function CreateUser({ roles }: CreateUserProps) {
                         </CardContent>
                         <CardFooter className="flex justify-end space-x-2">
                             <Button variant="outline" type="button" asChild>
-                                <a href="/admin/users">Cancel</a>
+                                <a href="/admin/users">Cancelar</a>
                             </Button>
                             <Button type="submit" disabled={processing} className="bg-blue-600 hover:bg-blue-700">
-                                {processing ? 'Creating...' : 'Create User'}
+                                {processing ? 'Creando...' : 'Crear Usuario'}
                             </Button>
                         </CardFooter>
                     </Card>

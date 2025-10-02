@@ -9,15 +9,15 @@ import { Head, useForm } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Admin',
+        title: 'Administrador',
         href: '/admin',
     },
     {
-        title: 'Users',
+        title: 'Usuarios',
         href: '/admin/users',
     },
     {
-        title: 'Edit',
+        title: 'Editar',
         href: '#',
     },
 ];
@@ -28,7 +28,7 @@ interface EditUserProps {
 }
 
 export default function EditUser({ user, roles }: EditUserProps) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, setError } = useForm({
         name: user.name,
         username: user.username || '',
         email: user.email,
@@ -37,8 +37,38 @@ export default function EditUser({ user, roles }: EditUserProps) {
         roles: user.roles.map((role) => role.id),
     });
 
+    const validatePassword = (password: string): string | null => {
+        if (password.length < 8) {
+            return 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        if (!/[a-z]/.test(password)) {
+            return 'La contraseña debe contener al menos una letra minúscula.';
+        }
+        if (!/[A-Z]/.test(password)) {
+            return 'La contraseña debe contener al menos una letra mayúscula.';
+        }
+        if (!/\d/.test(password)) {
+            return 'La contraseña debe contener al menos un número.';
+        }
+        if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]/.test(password)) {
+            return 'La contraseña debe contener al menos un símbolo.';
+        }
+        return null;
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (data.password) {
+            const passwordError = validatePassword(data.password);
+            if (passwordError) {
+                setError('password', passwordError);
+                return;
+            }
+            if (data.password !== data.password_confirmation) {
+                setError('password_confirmation', 'Las contraseñas no coinciden.');
+                return;
+            }
+        }
         put(`/admin/users/${user.id}`);
     };
 
@@ -57,51 +87,61 @@ export default function EditUser({ user, roles }: EditUserProps) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit User: ${user.name}`} />
+            <Head title={`Editar Usuario: ${user.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div>
-                    <h1 className="text-2xl font-bold">Edit User: {user.name}</h1>
-                    <p className="text-muted-foreground">Update user information</p>
+                    <h1 className="text-2xl font-bold">Editar Usuario: {user.name}</h1>
+                    <p className="text-muted-foreground">Actualizar la información del usuario</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>User Details</CardTitle>
-                            <CardDescription>Update the details for this user</CardDescription>
+                            <CardTitle>Detalles del Usuario</CardTitle>
+                            <CardDescription>Actualice los detalles de este usuario</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required />
+                                <Label htmlFor="name">Nombre</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) => {
+                                        setData('name', e.target.value);
+                                        if (!data.username) {
+                                            setData('username', e.target.value.replace(/\s+/g, '_').toLowerCase());
+                                        }
+                                    }}
+                                    required
+                                />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="username">Username (Optional)</Label>
+                                <Label htmlFor="username">Nombre de Usuario (Opcional)</Label>
                                 <Input
                                     id="username"
                                     value={data.username}
                                     onChange={(e) => setData('username', e.target.value)}
-                                    placeholder="johndoe"
+                                    placeholder="juanperez"
                                 />
                                 {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">Correo Electrónico</Label>
                                 <Input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} required />
                                 {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password (leave blank to keep current password)</Label>
+                                <Label htmlFor="password">Contraseña (dejar en blanco para mantener la actual)</Label>
                                 <Input id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} />
                                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                <Label htmlFor="password_confirmation">Confirmar Contraseña</Label>
                                 <Input
                                     id="password_confirmation"
                                     type="password"
@@ -121,7 +161,7 @@ export default function EditUser({ user, roles }: EditUserProps) {
                                                 onCheckedChange={() => handleRoleToggle(role.id)}
                                             />
                                             <Label htmlFor={`role-${role.id}`} className="text-sm font-normal">
-                                                {role.name}
+                                                {role.title}
                                                 {role.description && <span className="ml-1 text-xs text-muted-foreground">({role.description})</span>}
                                             </Label>
                                         </div>
@@ -132,10 +172,10 @@ export default function EditUser({ user, roles }: EditUserProps) {
                         </CardContent>
                         <CardFooter className="flex justify-end space-x-2">
                             <Button variant="outline" type="button" asChild>
-                                <a href="/admin/users">Cancel</a>
+                                <a href="/admin/users">Cancelar</a>
                             </Button>
                             <Button type="submit" disabled={processing} className="bg-blue-600 hover:bg-blue-700">
-                                {processing ? 'Saving...' : 'Save Changes'}
+                                {processing ? 'Guardando...' : 'Guardar Cambios'}
                             </Button>
                         </CardFooter>
                     </Card>

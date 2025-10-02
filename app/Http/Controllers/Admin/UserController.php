@@ -8,6 +8,7 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -18,7 +19,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::with('roles')->paginate(10);
-        
+
         return Inertia::render('admin/users/index', [
             'users' => $users
         ]);
@@ -30,7 +31,7 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        
+
         return Inertia::render('admin/users/create', [
             'roles' => $roles
         ]);
@@ -43,12 +44,12 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'nullable|string|max:255|unique:users',
+            'username' => 'required|string|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'project' => 'nullable|string|max:255',
             'department' => 'nullable|string|max:255',
-            'password' => 'required|string|min:8|confirmed',
-            'roles' => 'nullable|array',
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
+            'roles' => 'required|array',
             'roles.*' => 'exists:roles,id'
         ]);
 
@@ -76,7 +77,7 @@ class UserController extends Controller
     {
         $user->load('roles');
         $roles = Role::all();
-        
+
         return Inertia::render('admin/users/edit', [
             'user' => $user,
             'roles' => $roles
@@ -94,7 +95,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'project' => 'nullable|string|max:255',
             'department' => 'nullable|string|max:255',
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id'
         ]);

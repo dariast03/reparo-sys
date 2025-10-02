@@ -10,7 +10,8 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerWelcomeQrMail extends Mailable implements ShouldQueue
 {
@@ -21,8 +22,7 @@ class CustomerWelcomeQrMail extends Mailable implements ShouldQueue
      */
     public function __construct(
         public Customer $customer
-    ) {
-    }
+    ) {}
 
     /**
      * Get the message envelope.
@@ -39,8 +39,12 @@ class CustomerWelcomeQrMail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
+
         return new Content(
             html: 'emails.customer-welcome-qr',
+            with: [
+                'qrImageUrl' => $this->customer->qr_image_url,
+            ],
         );
     }
 
@@ -49,15 +53,14 @@ class CustomerWelcomeQrMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        // Generate QR code as PNG and attach it
-        /* $qrCodePng = QrCode::format('png')
-            ->size(300)
-            ->margin(2)
-            ->generate($this->customer->qr_url); */
+        if ($this->customer->qr_image_path) {
+            return [
+                Attachment::fromStorageDisk("public", $this->customer->qr_image_path)
+                    ->as("qr-{$this->customer->qr_code}.png")
+                    ->withMime('image/png')
+            ];
+        }
 
-        return [
-           /*  Attachment::fromData(fn () => $qrCodePng, "qr-{$this->customer->qr_code}.png")
-                ->withMime('image/png'), */
-        ];
+        return [];
     }
 }

@@ -24,7 +24,7 @@ class WhatsAppService
                 'image_url' => $imageUrl
             ]);
 
-            $response = Http::timeout(10)->get($imageUrl);
+            $response = Http::timeout(30)->get($imageUrl);
 
             $result = [
                 'accessible' => $response->successful(),
@@ -40,7 +40,6 @@ class WhatsAppService
             ]);
 
             return $result;
-
         } catch (\Exception $e) {
             Log::error('WhatsApp: Image URL verification failed', [
                 'image_url' => $imageUrl,
@@ -101,7 +100,7 @@ class WhatsAppService
                 'message_length' => strlen($message)
             ]);
 
-            $response = Http::withHeaders($headers)->post($url, $payload);
+            $response = Http::timeout(120)->withHeaders($headers)->post($url, $payload);
 
             // Log response details
             Log::info('WhatsApp text message response received', [
@@ -141,7 +140,8 @@ class WhatsAppService
             ]);
             return false;
         }
-    }        /**
+    }
+    /**
      * Send an image message via WhatsApp
      *
      * @param string $phoneNumber Phone number in international format
@@ -255,8 +255,8 @@ class WhatsAppService
     public function isConfigured(): bool
     {
         return !empty($this->baseUrl) &&
-               !empty($this->sessionName) &&
-               !empty($this->apiKey);
+            !empty($this->sessionName) &&
+            !empty($this->apiKey);
     }
 
     /**
@@ -321,7 +321,7 @@ class WhatsAppService
                 'payload' => $payload
             ]);
 
-            $response = Http::withHeaders($headers)->post($url, $payload);
+            $response = Http::timeout(120)->withHeaders($headers)->post($url, $payload);
 
             // Log response details
             Log::info('WhatsApp document message response received', [
@@ -384,7 +384,7 @@ class WhatsAppService
                 'document_url' => $documentUrl
             ]);
 
-            $response = Http::timeout(10)->head($documentUrl); // Use HEAD to avoid downloading the whole file
+            $response = Http::timeout(30)->head($documentUrl); // Use HEAD to avoid downloading the whole file
 
             $result = [
                 'accessible' => $response->successful(),
@@ -399,7 +399,6 @@ class WhatsAppService
             ]);
 
             return $result;
-
         } catch (\Exception $e) {
             Log::error('WhatsApp: Document URL verification failed', [
                 'document_url' => $documentUrl,

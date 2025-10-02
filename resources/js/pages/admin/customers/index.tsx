@@ -13,12 +13,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Download, Eye, Pencil, PlusCircle, QrCode, UserCheck, UserX } from 'lucide-react';
+import { Download, Eye, MoreHorizontal, Pencil, PlusCircle, QrCode, Trash2, UserCheck, UserX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Customer {
@@ -122,6 +130,15 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                 preserveScroll: true,
             },
         );
+    };
+
+    const handleDeleteCustomer = (customerId: number) => {
+        router.delete(`/admin/customers/${customerId}/delete`, {
+            preserveScroll: true,
+            onError: () => {
+                alert('No se puede eliminar el cliente. Asegúrate de que no tenga registros asociados.');
+            },
+        });
     };
 
     const getStatusBadge = (status: string) => {
@@ -359,16 +376,20 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                                             </DialogDescription>
                                                         </DialogHeader>
                                                         <div className="flex flex-col items-center justify-center space-y-4">
-                                                            <div className="bg-white p-4 rounded-lg border">
+                                                            <div className="rounded-lg border bg-white p-4">
                                                                 <img
                                                                     src={customer.qr_data_uri}
                                                                     alt={`QR Code for ${customer.first_name} ${customer.last_name}`}
-                                                                    className="w-48 h-48"
+                                                                    className="h-48 w-48"
                                                                 />
                                                             </div>
-                                                            <div className="text-sm text-muted-foreground text-center">
-                                                                <p>Código: <code className="bg-muted px-2 py-1 rounded">{customer.qr_code}</code></p>
-                                                                <p className="mt-1">URL: <code className="bg-muted px-2 py-1 rounded text-xs">{customer.qr_url}</code></p>
+                                                            <div className="text-center text-sm text-muted-foreground">
+                                                                <p>
+                                                                    Código: <code className="rounded bg-muted px-2 py-1">{customer.qr_code}</code>
+                                                                </p>
+                                                                <p className="mt-1">
+                                                                    URL: <code className="rounded bg-muted px-2 py-1 text-xs">{customer.qr_url}</code>
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <DialogFooter>
@@ -381,55 +402,99 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                                 </Dialog>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Link href={`/admin/customers/${customer.id}`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            <Eye className="h-4 w-4" />
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Abrir menú</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
-                                                    </Link>
-                                                    <Link href={`/admin/customers/${customer.id}/edit`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                    {customer.status === 'active' ? (
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="sm" className="text-red-600">
-                                                                    <UserX className="h-4 w-4" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>¿Inactivar Cliente?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        ¿Estás seguro de que deseas inactivar a {customer.first_name}{' '}
-                                                                        {customer.last_name}? Esta acción no eliminará el cliente, pero no aparecerá
-                                                                        en las búsquedas normales.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                    <AlertDialogAction
-                                                                        onClick={() => handleDeactivateCustomer(customer.id)}
-                                                                        className="bg-red-600 hover:bg-red-700"
-                                                                    >
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/admin/customers/${customer.id}`}>
+                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                Ver
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/admin/customers/${customer.id}/edit`}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                Editar
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        {customer.status === 'active' ? (
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                                        <UserX className="mr-2 h-4 w-4" />
                                                                         Inactivar
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="text-green-600"
-                                                            onClick={() => handleReactivateCustomer(customer.id)}
-                                                        >
-                                                            <UserCheck className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
+                                                                    </DropdownMenuItem>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>¿Inactivar Cliente?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            ¿Estás seguro de que deseas inactivar a {customer.first_name}{' '}
+                                                                            {customer.last_name}? Esta acción no eliminará el cliente, pero no
+                                                                            aparecerá en las búsquedas normales.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                        <AlertDialogAction
+                                                                            onClick={() => handleDeactivateCustomer(customer.id)}
+                                                                            className="bg-red-600 hover:bg-red-700"
+                                                                        >
+                                                                            Inactivar
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        ) : (
+                                                            <DropdownMenuItem onClick={() => handleReactivateCustomer(customer.id)}>
+                                                                <UserCheck className="mr-2 h-4 w-4" />
+                                                                Reactivar
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {customer.status === 'inactive' && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <DropdownMenuItem
+                                                                            onSelect={(e) => e.preventDefault()}
+                                                                            className="text-red-600 focus:text-red-600"
+                                                                        >
+                                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                                            Eliminar
+                                                                        </DropdownMenuItem>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>¿Eliminar Cliente?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                ¿Estás seguro de que deseas eliminar permanentemente a{' '}
+                                                                                {customer.first_name} {customer.last_name}? Esta acción no se puede
+                                                                                deshacer.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                            <AlertDialogAction
+                                                                                onClick={() => handleDeleteCustomer(customer.id)}
+                                                                                className="bg-red-600 hover:bg-red-700"
+                                                                            >
+                                                                                Eliminar
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            </>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))

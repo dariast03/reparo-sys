@@ -129,9 +129,7 @@ export default function CreateCustomer() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="document_number">
-                                        Número de Documento <span className="text-red-500">*</span>
-                                    </Label>
+                                    <Label htmlFor="document_number">Número de Documento</Label>
                                     <Input
                                         id="document_number"
                                         value={data.document_number}
@@ -142,7 +140,15 @@ export default function CreateCustomer() {
                                     {errors.document_number && <p className="text-sm text-red-500">{errors.document_number}</p>}
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
 
+                    {/* Contact Information */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Información de Contacto</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="phone">
                                     Teléfono <span className="text-red-500">*</span>
@@ -156,15 +162,7 @@ export default function CreateCustomer() {
                                 />
                                 {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
                             </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Contact Information */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Información de Contacto</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input

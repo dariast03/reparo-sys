@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -22,6 +23,7 @@ class Customer extends Model
         'notes',
         'status',
         'qr_code',
+        'qr_image_path',
     ];
 
     protected $casts = [
@@ -36,6 +38,7 @@ class Customer extends Model
         'qr_url',
         'qr_base64',
         'qr_data_uri',
+        'qr_image_url',
     ];
 
     // Relationships
@@ -84,6 +87,7 @@ class Customer extends Model
         static::creating(function ($customer) {
             if (empty($customer->qr_code)) {
                 $customer->qr_code = $customer->generateUniqueQrCode();
+                $customer->generateAndSaveQrImage();
             }
         });
     }
@@ -97,12 +101,45 @@ class Customer extends Model
         return $qrCode;
     }
 
+    private function generateAndSaveQrImage()
+    {
+        if (!$this->qr_code) {
+            return;
+        }
+
+        $qrUrl = url("/cliente/{$this->qr_code}");
+
+        // Generate QR as PNG
+        $qrImage = QrCode::format('png')
+            ->size(300)
+            ->margin(4)
+            ->generate($qrUrl);
+
+        // Save to storage
+        $fileName = $this->qr_code . '.png';
+        $path = 'qr-codes/' . $fileName;
+
+        Storage::put($path, $qrImage);
+
+        $this->qr_image_path = $path;
+    }
+
     public function getQrUrlAttribute()
     {
         if (!$this->qr_code) {
             return null;
         }
         return url("/cliente/{$this->qr_code}");
+    }
+
+    public function getQrDataUriAttribute()
+    {
+        $base64 = $this->qr_base64;
+        if (!$base64) {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . $base64;
     }
 
     public function getQrBase64Attribute()
@@ -130,19 +167,23 @@ class Customer extends Model
         }
     }
 
-    public function getQrDataUriAttribute()
+    public function getQrImageUrlAttribute()
     {
-        $base64 = $this->qr_base64;
-        if (!$base64) {
+        if (!$this->qr_image_path) {
             return null;
         }
-
-        return 'data:image/png;base64,' . $base64;
+        return asset('storage/' . $this->qr_image_path);
     }
 
     public function regenerateQrCode()
     {
+        // Delete old QR image if exists
+        if ($this->qr_image_path && Storage::disk('public')->exists($this->qr_image_path)) {
+            Storage::disk('public')->delete($this->qr_image_path);
+        }
+
         $this->qr_code = $this->generateUniqueQrCode();
+        $this->generateAndSaveQrImage();
         $this->save();
         return $this->qr_code;
     }

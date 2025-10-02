@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -231,7 +232,9 @@
                 margin: 0;
             }
 
-            .header, .content, .footer {
+            .header,
+            .content,
+            .footer {
                 padding: 20px;
             }
 
@@ -249,6 +252,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -274,30 +278,34 @@
                     <span class="info-value">{{ $customer->full_name }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">{{ $customer->document_type === 'ci' ? 'Cédula de Identidad' : 'Documento' }}:</span>
+                    <span
+                        class="info-label">{{ $customer->document_type === 'ci' ? 'Cédula de Identidad' : 'Documento' }}:</span>
                     <span class="info-value">{{ $customer->document_number }}</span>
                 </div>
-                @if($customer->email)
-                <div class="info-row">
-                    <span class="info-label">Email:</span>
-                    <span class="info-value">{{ $customer->email }}</span>
-                </div>
+                @if ($customer->email)
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ $customer->email }}</span>
+                    </div>
                 @endif
-                @if($customer->phone)
-                <div class="info-row">
-                    <span class="info-label">Teléfono:</span>
-                    <span class="info-value">{{ $customer->phone }}</span>
-                </div>
+                @if ($customer->phone)
+                    <div class="info-row">
+                        <span class="info-label">Teléfono:</span>
+                        <span class="info-value">{{ $customer->phone }}</span>
+                    </div>
                 @endif
             </div>
 
             <!-- QR Code Section -->
             <div class="qr-section">
                 <h3>🔗 Tu Código QR Personal</h3>
-                <p>Este código QR te permitirá acceder rápidamente a tu información, historial de reparaciones y más.</p>
+                <p>Este código QR te permitirá acceder rápidamente a tu información, historial de reparaciones y más.
+                </p>
 
                 <div class="qr-code">
-                    <img src="{{ $customer->qr_data_uri }}" alt="Código QR de {{ $customer->full_name }}" style="max-width: 200px; height: auto;">
+                    <img src="{{ $message->embed(storage_path('app/public/' . $customer->qr_image_path)) }}"
+                        alt="Código QR de {{ $customer->full_name }}" style="max-width:200px; height:auto;">
+
                 </div>
 
                 <div class="qr-code-text">{{ $customer->qr_code }}</div>
@@ -364,4 +372,5 @@
         </div>
     </div>
 </body>
+
 </html>

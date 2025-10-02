@@ -200,6 +200,36 @@ class CustomerController extends Controller
         }
     }
 
+    /*
+    Delete the specified customer from storage (hard delete).
+    */
+
+    public function delete(Customer $customer)
+    {
+        try {
+            // Check if customer has any associated records
+            $hasAssociations = $customer->repairOrders()->exists() ||
+                $customer->sales()->exists() ||
+                $customer->quotes()->exists();
+
+            if ($hasAssociations) {
+                return back()->withErrors([
+                    'error' => 'No se puede eliminar el cliente porque tiene registros asociados.'
+                ]);
+            }
+
+            $customer->delete();
+
+            return redirect()
+                ->route('admin.customers.index')
+                ->with('success', 'Cliente eliminado exitosamente.');
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => 'Error al eliminar el cliente: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * Reactivate an inactive customer.
      */
@@ -290,7 +320,6 @@ class CustomerController extends Controller
                     'error' => 'No se pudo enviar el código QR. ' . implode(' ', $summary['messages'])
                 ]);
             }
-
         } catch (\Exception $e) {
             Log::error('Failed to send QR notifications to customer ' . $customer->id . ': ' . $e->getMessage());
 
@@ -336,7 +365,6 @@ class CustomerController extends Controller
                     'error' => 'No se pudo enviar la notificación. ' . implode(' ', $summary['messages'])
                 ]);
             }
-
         } catch (\Exception $e) {
             Log::error('Failed to send repair order status notification to customer ' . $customer->id . ': ' . $e->getMessage());
 

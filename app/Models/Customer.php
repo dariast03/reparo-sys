@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -109,19 +110,29 @@ class Customer extends Model
 
         $qrUrl = url("/cliente/{$this->qr_code}");
 
-        // Generate QR as PNG
-        $qrImage = QrCode::format('png')
+        $fileName = $this->qr_code . '.png';
+        $path = 'storage/qr-codes/' . $fileName;
+
+        // Ruta completa en public
+        $fullPath = public_path($path);
+
+        // Crear directorio si no existe
+        $directory = dirname($fullPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        // Generar QR directamente en public
+        QrCode::format('png')
             ->size(300)
             ->margin(4)
-            ->generate($qrUrl);
-
-        // Save to storage
-        $fileName = $this->qr_code . '.png';
-        $path = 'qr-codes/' . $fileName;
-
-        Storage::put($path, $qrImage);
+            ->generate($qrUrl, $fullPath);
 
         $this->qr_image_path = $path;
+
+        // Verificar
+        Log::info('QR guardado en: ' . $fullPath);
+        Log::info('Existe: ' . (file_exists($fullPath) ? 'SI' : 'NO'));
     }
 
     public function getQrUrlAttribute()
@@ -172,7 +183,9 @@ class Customer extends Model
         if (!$this->qr_image_path) {
             return null;
         }
-        return asset('storage/' . $this->qr_image_path);
+
+        $cleanPath = str_replace('storage/', '', $this->qr_image_path);
+        return asset($cleanPath);
     }
 
     public function regenerateQrCode()

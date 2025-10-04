@@ -305,7 +305,6 @@
                 <div class="qr-code">
                     <img src="{{ $message->embed(storage_path('app/public/' . $customer->qr_image_path)) }}"
                         alt="Código QR de {{ $customer->full_name }}" style="max-width:200px; height:auto;">
-
                 </div>
 
                 <div class="qr-code-text">{{ $customer->qr_code }}</div>

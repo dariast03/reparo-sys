@@ -39,6 +39,8 @@ class CustomerWelcomeQrMail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
+        $xd = 'app/public/' . str_replace('storage/', '', $this->customer->qr_image_path);
+        Log::error('CustomerWelcomeQrMail: QR Image Path', ['path' => $xd]);
 
         return new Content(
             html: 'emails.customer-welcome-qr',
@@ -53,13 +55,13 @@ class CustomerWelcomeQrMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        if ($this->customer->qr_image_path) {
+        /*        if ($this->customer->qr_image_path) {
             return [
                 Attachment::fromStorageDisk("public", $this->customer->qr_image_path)
                     ->as("qr-{$this->customer->qr_code}.png")
                     ->withMime('image/png')
             ];
-        }
+        } */
 
         return [];
     }

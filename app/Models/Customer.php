@@ -119,7 +119,8 @@ class Customer extends Model
         $fileName = $this->qr_code . '.png';
         $path = 'qr-codes/' . $fileName;
 
-        Storage::put($path, $qrImage);
+        Storage::disk('public')->put($path, $qrImage);
+        Storage::disk("local")->put($path, $qrImage);
 
         $this->qr_image_path = $path;
     }
